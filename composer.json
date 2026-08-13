@@ -1,0 +1,41 @@
+{
+    "name": "kevinpirnie/kp-agent-ready",
+    "description": "KP Agent Ready",
+    "version": "1.1.98",
+    "type": "project",
+    "homepage": "https://kevinpirnie.com/",
+    "readme": "readme.txt",
+    "license": "GPL-3.0-or-later",
+    "prefer-stable": true,
+    "funding": [
+        {
+            "type": "paypal",
+            "url": "https://www.paypal.biz/kevinpirnie"
+        },
+        {
+            "type": "ko-fi",
+            "url": "https://ko-fi.com/kevinpirnie"
+        }
+    ],
+    "authors": [
+        {
+            "name": "Kevin Pirnie",
+            "email": "iam@kevinpirnie.com",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "email": "iam@kevinpirnie.com",
+        "issues": "https://github.com/kpirnie/wpplugin-kp-agent-ready/issues",
+        "source": "https://github.com/kpirnie/wpplugin-kp-agent-ready"
+    },
+    "require": {
+        "php": ">=8.2"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "classmap-authoritative": true,
+        "apcu-autoloader": true,
+        "sort-packages": true
+    }
+}
