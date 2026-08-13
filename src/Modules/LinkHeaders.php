@@ -71,13 +71,13 @@ class LinkHeaders extends AbstractModule
         }
 
         $links = [
-            'api-catalog'  => '/.well-known/api-catalog',
-            'describedby'  => '/.well-known/agent-skills/index.json',
-            'service-desc' => '/.well-known/mcp/server-card.json',
+            'api-catalog'  => '.well-known/api-catalog',
+            'describedby'  => '.well-known/agent-skills/index.json',
+            'service-desc' => '.well-known/mcp/server-card.json',
         ];
 
-        foreach ($links as $rel => $href) {
-            header(sprintf('Link: <%s>; rel="%s"', $href, $rel), false);
+        foreach ($links as $rel => $path) {
+            header(sprintf('Link: <%s>; rel="%s"', esc_url_raw(home_url($path)), $rel), false);
         }
     }
 }

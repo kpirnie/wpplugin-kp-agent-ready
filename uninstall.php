@@ -39,6 +39,3 @@ spl_autoload_register(static function (string $class): void {
 
 // Delete plugin options
 delete_option('kp_agent_ready');
-
-// Delete transients
-delete_transient('kp_agent_ready_update_data');

@@ -129,11 +129,12 @@ class WellKnown extends AbstractModule
     {
 
         // phpcs:disable WordPress.Security.NonceVerification.Recommended
-        if (isset($_GET['__kp_wk'])) {
-            $raw = sanitize_text_field(wp_unslash($_GET['__kp_wk']));
-        } else {
-            $raw = sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'] ?? ''));
-        }
+        $override = isset($_GET['__kp_wk'])
+            ? sanitize_text_field(wp_unslash($_GET['__kp_wk']))
+            : '';
+        $raw      = $override !== ''
+            ? $override
+            : sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'] ?? ''));
         // phpcs:enable WordPress.Security.NonceVerification.Recommended
 
         // check our paths
@@ -150,6 +151,12 @@ class WellKnown extends AbstractModule
 
         if ($home_path !== '' && str_starts_with($path, $home_path . '/')) {
             $path = substr($path, strlen($home_path) + 1);
+        }
+
+        // the query-string override exists only to carry the server rewrite fallbacks
+        // documented in the readme, so it never drives the matcher anywhere else
+        if ($override !== '' && ! str_starts_with($path, '.well-known/')) {
+            return '';
         }
 
         return $path;
@@ -276,7 +283,7 @@ class WellKnown extends AbstractModule
             'capabilities' => $capabilities,
             'description'  => sanitize_text_field($this->opt('mcp_desc', get_bloginfo('description'))),
             'homepage'     => esc_url_raw(home_url('/')),
-            'contact'      => $this->opt('webmcp_contact_url', home_url('/contact/')),
+            'contact'      => esc_url_raw($this->opt('webmcp_contact_url', home_url('/contact/'))),
         ];
 
         $this->respond($payload);
@@ -520,7 +527,7 @@ class WellKnown extends AbstractModule
     private function respond(array $payload, string $content_type = 'application/json', bool $cache = true): never
     {
         // setup the json response
-        $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        $json = wp_json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         if ($json === false) {
             http_response_code(500);
             exit;

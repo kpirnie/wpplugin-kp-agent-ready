@@ -61,6 +61,9 @@ class LlmsTxt extends AbstractModule
     /** AJAX action handle for the manual regenerate button. */
     private const AJAX_ACTION = 'kp_agent_ready_regenerate_llms';
 
+    /** Cron hook used to debounce regeneration triggered by content changes. */
+    private const CRON_HOOK = 'kp_agent_ready_generate_llms';
+
     /**
      * register
      *
@@ -76,6 +79,9 @@ class LlmsTxt extends AbstractModule
      */
     public function register(): void
     {
+        // Bound before the enabled check so an already-queued event still resolves
+        add_action(self::CRON_HOOK, [$this, 'cronGenerate']);
+
         if (! $this->opt('llms_enabled', false)) {
             return;
         }
@@ -129,7 +135,7 @@ class LlmsTxt extends AbstractModule
             return;
         }
 
-        $this->generate();
+        $this->scheduleGenerate();
     }
 
     /**
@@ -164,6 +170,53 @@ class LlmsTxt extends AbstractModule
             return;
         }
 
+        $this->scheduleGenerate();
+    }
+
+    /**
+     * scheduleGenerate
+     *
+     * Queues a single deferred regeneration, coalescing rapid content changes
+     * into one run instead of rebuilding both files on every save.
+     *
+     * @since 1.1.89
+     * @access private
+     * @author Kevin Pirnie <iam@kevinpirnie.com>
+     * @package KP Agent Ready
+     *
+     * @return void This method does not return anything
+     *
+     */
+    private function scheduleGenerate(): void
+    {
+        if (wp_next_scheduled(self::CRON_HOOK)) {
+            return;
+        }
+
+        wp_schedule_single_event(time() + 60, self::CRON_HOOK);
+    }
+
+    /**
+     * cronGenerate
+     *
+     * Runs the deferred regeneration queued by scheduleGenerate(). Re-reads
+     * options from the database since the cron request boots fresh.
+     *
+     * @since 1.1.89
+     * @access public
+     * @author Kevin Pirnie <iam@kevinpirnie.com>
+     * @package KP Agent Ready
+     *
+     * @return void This method does not return anything
+     *
+     */
+    public function cronGenerate(): void
+    {
+        if (! $this->opt('llms_enabled', false)) {
+            return;
+        }
+
+        $this->options = (array) get_option(Plugin::OPTION_KEY, []);
         $this->generate();
     }
 
@@ -669,7 +722,7 @@ class LlmsTxt extends AbstractModule
 
         $path = rtrim(ABSPATH, '/') . '/' . ltrim($filename, '/');
 
-        return (bool) $wp_filesystem->put_contents($path, $content, 0644);
+        return (bool) $wp_filesystem->put_contents($path, $content, FS_CHMOD_FILE);
     }
 
     // -------------------------------------------------------------------------
@@ -731,6 +784,28 @@ class LlmsTxt extends AbstractModule
         delete_transient(self::TRANSIENT_SLIM);
         delete_transient(self::TRANSIENT_FULL);
         delete_transient(self::TRANSIENT_ERRORS);
+
+        // clear the cron
+        self::clearSchedule();
+    }
+
+    /**
+     * clearSchedule
+     *
+     * Removes any pending deferred regeneration event. Called on deactivation
+     * and uninstall so nothing is left queued behind the plugin.
+     *
+     * @since 1.1.89
+     * @access public
+     * @author Kevin Pirnie <iam@kevinpirnie.com>
+     * @package KP Agent Ready
+     *
+     * @return void This method does not return anything
+     *
+     */
+    public static function clearSchedule(): void
+    {
+        wp_clear_scheduled_hook(self::CRON_HOOK);
     }
 
     /**
@@ -749,15 +824,31 @@ class LlmsTxt extends AbstractModule
      */
     public static function getLastModified(): string
     {
+        global $wp_filesystem;
+
+        if (! function_exists('WP_Filesystem')) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+        }
+
+        if (! WP_Filesystem()) {
+            return '—';
+        }
+
         $path = rtrim(ABSPATH, '/') . '/' . self::FILE_SLIM;
 
-        if (! file_exists($path)) {
+        if (! $wp_filesystem->exists($path)) {
+            return '—';
+        }
+
+        $mtime = $wp_filesystem->mtime($path);
+
+        if (! $mtime) {
             return '—';
         }
 
         return date_i18n(
             get_option('date_format') . ' ' . get_option('time_format'),
-            filemtime($path)
+            $mtime
         );
     }
 }

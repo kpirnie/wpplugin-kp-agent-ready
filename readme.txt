@@ -2,11 +2,11 @@
 Contributors: kevp75
 Tags: ai, agents, mcp, well-known, markdown
 Requires at least: 6.8
-Tested up to: 7.1
+Tested up to: 7.2
 Requires PHP: 8.2
-Stable tag: 1.1.88
-License: GPL-2.0-or-later
-License URI: https://www.gnu.org/licenses/gpl-2.0.html
+Stable tag: 1.1.98
+License: GPL-3.0-or-later
+License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
 Make your WordPress site discoverable and usable by AI agents via well-known endpoints, MCP, OAuth, and Markdown negotiation.
 
@@ -93,13 +93,13 @@ Two filters let themes and other plugins extend the plugin's output without touc
 2. In your WordPress admin, go to **Plugins → Add New Plugin → Upload Plugin**.
 3. Upload the zip and click **Install Now**.
 4. Click **Activate Plugin**.
-5. Go to **Settings → Permalinks** and click **Save Changes** — this registers the `/.well-known/` URL rules.
+5. Go to **Settings → KP Agent Ready** to configure what gets published.
 
 = Manual (FTP / SSH) =
 
 1. Unzip and upload the `kp-agent-ready` folder to `wp-content/plugins/`.
 2. Activate the plugin from **Plugins → Installed Plugins**.
-3. Go to **Settings → Permalinks** and click **Save Changes**.
+3. Go to **Settings → KP Agent Ready** to configure what gets published.
 
 = Web Server Configuration =
 
@@ -193,6 +193,18 @@ Yes — see the Developer Filters section in the Description tab.
 8. LLMS
 
 == Changelog ==
+
+= 1.1.98 =
+* Verify: Wordpress Core 7.2 compliant
+* Fix: Password-protected content leaking via markdown negotiation
+* Fix: Vary: Accept missing on HTML responses
+* Fix: Link headers now built from home_url()
+* Fix: Version constant mismatch
+* Fix: Multisite network-activation guard was a no-op
+* Update: llms.txt regeneration deferred to cron
+* Update: License to GPLv3 or later
+* Update: wp_json_encode, FS_CHMOD_FILE, WP_Filesystem mtime
+* Verify: Removed dead rewrite flushes and updater transient
 
 = 1.1.88 =
 * Update LlmsTxt module: Utilize wp_delete_file instead of unlink on plugin removal

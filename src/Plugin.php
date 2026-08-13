@@ -109,7 +109,9 @@ final class Plugin
     /**
      * activate
      *
-     * Runs on plugin activation — registers rewrite rules and flushes.
+     * Runs on plugin activation. No rewrite rules are registered — the
+     * well-known endpoints dispatch off REQUEST_URI at parse_request — so
+     * there is nothing to set up here.
      *
      * @since 1.0.0
      * @access public
@@ -119,16 +121,13 @@ final class Plugin
      * @return void This method does not return anything
      *
      */
-    public static function activate(): void
-    {
-        // flush the rewrites
-        flush_rewrite_rules();
-    }
+    public static function activate(): void {}
 
     /**
      * deactivate
      *
-     * Runs on plugin deactivation — flushes rewrite rules.
+     * Runs on plugin deactivation — clears any pending llms.txt regeneration
+     * event so nothing stays queued once we're switched off.
      *
      * @since 1.0.0
      * @access public
@@ -140,6 +139,6 @@ final class Plugin
      */
     public static function deactivate(): void
     {
-        flush_rewrite_rules();
+        LlmsTxt::clearSchedule();
     }
 }

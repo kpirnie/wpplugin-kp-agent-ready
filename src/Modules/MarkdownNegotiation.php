@@ -76,6 +76,10 @@ class MarkdownNegotiation extends AbstractModule
         if (! $this->opt('markdown_enabled', true)) return;
         if (! is_singular()) return;
 
+        // the response varies by Accept regardless of which branch we take, so caches
+        // and CDNs need to know before we decide anything
+        header('Vary: Accept');
+
         // make sure we accept the proper content type of what we want to serve up here
         $accept = sanitize_text_field(wp_unslash($_SERVER['HTTP_ACCEPT'] ?? ''));
         if (! $this->prefersMarkdown($accept)) {
@@ -86,9 +90,12 @@ class MarkdownNegotiation extends AbstractModule
         global $post;
         if (! $post instanceof \WP_Post) return;
 
+        // never leak protected content - core only enforces this inside get_the_content()
+        if (post_password_required($post)) return;
+
         // setup the relevant post data
         $title = wp_strip_all_tags(get_the_title($post));
-        $title = preg_replace('/([\\\\`*_{}\[\]()#+\-.!])/u', '\\\\$1', $title);
+        $title = (string) preg_replace('/([\\\\`*_{}\[\]()#+\-.!])/u', '\\\\$1', $title) ?: $title;
         $url   = esc_url(get_permalink($post));
         $content = apply_filters('the_content', $post->post_content);
         $md      = HtmlToMarkdown::convert($content);
@@ -96,7 +103,6 @@ class MarkdownNegotiation extends AbstractModule
         // setup the return markdown content
         status_header(200);
         header('Content-Type: text/markdown; charset=UTF-8');
-        header('Vary: Accept');
         header('X-Content-Type-Options: nosniff');
 
         // echo out the converted content, then exit so nothing further is output
