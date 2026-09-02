@@ -197,6 +197,10 @@ Yes — see the Developer Filters section in the Description tab.
 = 1.2.03 =
 * Fix: LLMS txt generation no longer posts password protected content
 
+= 1.1.99 =
+* Verify: Wordpress Core 7.1 compliant
+    * 7.2 compliance broke the "verified up to" on wordpress.org
+
 = 1.1.98 =
 * Verify: Wordpress Core 7.2 compliant
 * Fix: Password-protected content leaking via markdown negotiation

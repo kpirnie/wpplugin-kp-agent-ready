@@ -208,7 +208,7 @@ class HtmlToMarkdown
             'del', 's', 'strike' => '~~' . trim($content) . '~~',
             'a'                  => self::renderLink($node, trim($content)),
             'img'                => self::renderImage($node),
-            'br'                 => "  \n",
+            'br'                 => "\\\n",
             'figcaption'         => '_' . trim($content) . "_\n\n",
             default              => $content,
         };
