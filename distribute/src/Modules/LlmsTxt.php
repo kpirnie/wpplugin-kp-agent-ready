@@ -565,6 +565,8 @@ class LlmsTxt extends AbstractModule
      */
     private function buildPostSection(string $post_type, string $label, bool $full): string
     {
+
+        // get all posts of the post type, if they are not password protected
         $posts = get_posts([
             'post_type'      => $post_type,
             'post_status'    => 'publish',
@@ -572,6 +574,7 @@ class LlmsTxt extends AbstractModule
             'orderby'        => 'title',
             'order'          => 'ASC',
             'no_found_rows'  => true,
+            'has_password'   => false,
         ]);
 
         if (empty($posts)) {

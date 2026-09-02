@@ -4,7 +4,7 @@ Tags: ai, agents, mcp, well-known, markdown
 Requires at least: 6.8
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 1.1.99
+Stable tag: 1.2.03
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -193,6 +193,9 @@ Yes — see the Developer Filters section in the Description tab.
 8. LLMS
 
 == Changelog ==
+
+= 1.2.03 =
+* Fix: LLMS txt generation no longer posts password protected content
 
 = 1.1.98 =
 * Verify: Wordpress Core 7.2 compliant
