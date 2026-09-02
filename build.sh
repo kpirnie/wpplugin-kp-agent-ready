@@ -12,10 +12,17 @@ SLUG="$( grep -m1 'Text Domain:' "${SRC}"/*.php | sed 's/.*Text Domain:[[:space:
 VERSION="$( grep -m1 '^ \* Version:' "${SRC}/${SLUG}.php" | sed 's/^ \* Version:[[:space:]]*//' | tr -d '\r' )"
 STABLE="$( grep -m1 '^Stable tag:' "${SRC}/readme.txt" | sed 's/^Stable tag:[[:space:]]*//' | tr -d '\r' )"
 NAME="$( grep -m1 '^ \* Plugin Name:' "${SRC}/${SLUG}.php" | sed 's/^ \* Plugin Name:[[:space:]]*//' | tr -d '\r' )"
+CONST_NAME="$( echo "${SLUG}" | tr '[:lower:]-' '[:upper:]_' )_VERSION"
+CONST="$( grep -m1 "define('${CONST_NAME}'" "${SRC}/${SLUG}.php" | sed "s/.*,[[:space:]]*'\([^']*\)'.*/\1/" | tr -d '\r' )"
 
-# both have to match, otherwise we are shipping a mismatched release
+# all three have to match, otherwise we are shipping a mismatched release
 if [ "${VERSION}" != "${STABLE}" ]; then
     echo "! version mismatch: plugin header ${VERSION} vs readme stable tag ${STABLE}"
+    exit 1
+fi
+
+if [ "${VERSION}" != "${CONST}" ]; then
+    echo "! version mismatch: plugin header ${VERSION} vs ${CONST_NAME} ${CONST}"
     exit 1
 fi
 
@@ -43,20 +50,11 @@ rsync -a --prune-empty-dirs \
 cp "${SRC}/readme.txt" "${DIST}/readme.txt"
 cp "${SRC}/LICENSE" "${DIST}/LICENSE"
 
-# ship the composer manifest and build the autoloader against the distributed tree
-echo "# Working on Vendor"
-cp "${ROOT}/composer.json" "${DIST}/composer.json"
-composer install --no-dev --no-interaction --quiet \
-    --optimize-autoloader --classmap-authoritative \
-    --working-dir="${DIST}"
-rm -f "${DIST}/composer.lock"
-
 # generate the translation template
 echo "# Working on Languages"
 wp i18n make-pot "${DIST}" "${DIST}/languages/${SLUG}.pot" \
     --slug="${SLUG}" \
     --domain="${SLUG}" \
-    --exclude=vendor \
     --allow-root \
     --quiet
 

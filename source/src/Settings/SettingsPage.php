@@ -660,7 +660,8 @@ class SettingsPage
         }
 
         $tabs        = $this->getEnabledTabs();
-        $current_tab = sanitize_key($_GET['tab'] ?? array_key_first($tabs)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $current_tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : array_key_first($tabs);
 
         // Fall back to first tab if the requested one is no longer enabled
         if (!array_key_exists($current_tab, $tabs)) {
@@ -1849,7 +1850,9 @@ class SettingsPage
                         $btn.prop('disabled', false);
                         $status.text('');
                         var type = res.success ? 'success' : 'error';
-                        $('.wrap h1').after('<div class="notice notice-' + type + ' is-dismissible"><p>' + res.data.message + '</p></div>');
+                        var $notice = $('<div class="notice is-dismissible"><p></p></div>').addClass('notice-' + type);
+                        $notice.find('p').text((res.data && res.data.message) ? res.data.message : '');
+                        $('.wrap h1').after($notice);
                     });
                 });
             });
@@ -1980,7 +1983,7 @@ class SettingsPage
         }
 
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        $tab = sanitize_key($_GET['tab'] ?? 'features');
+        $tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : 'features';
 
         return Plugin::OPTION_KEY . '&tab=' . $tab;
     }

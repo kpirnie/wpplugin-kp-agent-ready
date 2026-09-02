@@ -2,9 +2,9 @@
 
 /**
  * Plugin Name:  KP Agent Ready
- * Plugin URI:   https://github.com/kpirnie/wppplugin-kp-agent-ready
+ * Plugin URI:   https://github.com/kpirnie/wpplugin-kp-agent-ready
  * Description:  Make your WordPress site discoverable and usable by AI agents. Implements the emerging suite of agent-readiness standards — all configurable from the WordPress admin.
- * Version:      1.2.03
+ * Version:      1.2.08
  * Author:       Kevin Pirnie
  * Author URI:   https://kevinpirnie.com/
  * License:      GPL-3.0-or-later
@@ -18,7 +18,7 @@
 defined('ABSPATH') || die('No direct script access allowed');
 
 // setup our plugin definitions
-defined('KP_AGENT_READY_VERSION') || define('KP_AGENT_READY_VERSION', '1.2.03');
+defined('KP_AGENT_READY_VERSION') || define('KP_AGENT_READY_VERSION', '1.2.08');
 defined('KP_AGENT_READY_FILE') || define('KP_AGENT_READY_FILE',    __FILE__);
 defined('KP_AGENT_READY_DIR') || define('KP_AGENT_READY_DIR',     plugin_dir_path(__FILE__));
 defined('KP_AGENT_READY_URL') || define('KP_AGENT_READY_URL',     plugin_dir_url(__FILE__));

@@ -64,6 +64,9 @@ class LlmsTxt extends AbstractModule
     /** Cron hook used to debounce regeneration triggered by content changes. */
     private const CRON_HOOK = 'kp_agent_ready_generate_llms';
 
+    /** @var array<string, array<int, \WP_Post>> Per-run post cache, keyed by post type. */
+    private array $post_cache = [];
+
     /**
      * register
      *
@@ -346,6 +349,9 @@ class LlmsTxt extends AbstractModule
      */
     public function generate(): array
     {
+        // reset the cache
+        $this->post_cache = [];
+
         $slim = $this->buildSlim();
         $full = $this->buildFull();
 
@@ -566,16 +572,20 @@ class LlmsTxt extends AbstractModule
     private function buildPostSection(string $post_type, string $label, bool $full): string
     {
 
-        // get all posts of the post type, if they are not password protected
-        $posts = get_posts([
-            'post_type'      => $post_type,
-            'post_status'    => 'publish',
-            'posts_per_page' => -1,
-            'orderby'        => 'title',
-            'order'          => 'ASC',
-            'no_found_rows'  => true,
-            'has_password'   => false,
-        ]);
+        // both files are built in the same run, so only query each type once
+        if (! isset($this->post_cache[$post_type])) {
+            $this->post_cache[$post_type] = get_posts([
+                'post_type'      => $post_type,
+                'post_status'    => 'publish',
+                'posts_per_page' => (int) apply_filters('kp_agent_ready_llms_post_limit', -1, $post_type),
+                'orderby'        => 'title',
+                'order'          => 'ASC',
+                'no_found_rows'  => true,
+                'has_password'   => false,
+            ]);
+        }
+
+        $posts = $this->post_cache[$post_type];
 
         if (empty($posts)) {
             return '';

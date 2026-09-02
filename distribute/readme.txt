@@ -4,7 +4,7 @@ Tags: ai, agents, mcp, well-known, markdown
 Requires at least: 6.8
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 1.2.03
+Stable tag: 1.2.08
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -194,8 +194,20 @@ Yes — see the Developer Filters section in the Description tab.
 
 == Changelog ==
 
-= 1.2.03 =
+= 1.2.08 =
 * Fix: LLMS txt generation no longer posts password protected content
+* Fix: br hard line breaks destroyed by trailing-whitespace normalization
+* Fix: table rows emitted out of order when a cell carries rowspan
+* Fix: table body rows dropped when tr elements sit outside tbody
+* Fix: large-document markdown path aborted on HTML void elements
+* Fix: unslash tab query var before sanitizing
+* Fix: regenerate notice inserted server message as HTML
+* Update: cache llms.txt post queries per run and expose a post limit filter
+* Fix: markdown escaping missed backslash, link brackets, and angle brackets
+
+= 1.1.99 =
+* Verify: Wordpress Core 7.1 compliant
+    * 7.2 compliance broke the "verified up to" on wordpress.org
 
 = 1.1.98 =
 * Verify: Wordpress Core 7.2 compliant

@@ -10,7 +10,7 @@
  * fenced code blocks with language hints.
  *
  * For inputs exceeding the streaming threshold, falls back to a lightweight
- * XMLReader pass that strips markup and preserves text content only.
+ * tag-stripping pass that preserves text content only.
  *
  * @since 1.1.0
  * @author Kevin Pirnie <me@kpirnie.com>
@@ -30,7 +30,7 @@ defined('ABSPATH') || die('No direct script access allowed');
  * HtmlToMarkdown
  *
  * Converts an HTML string to clean Markdown via DOMDocument (standard path)
- * or XMLReader (large-document streaming fallback).
+ * or a tag-stripping pass (large-document fallback).
  *
  * @since 1.1.0
  * @author Kevin Pirnie <iam@kevinpirnie.com>
@@ -66,7 +66,7 @@ class HtmlToMarkdown
      * convert
      *
      * Converts an HTML string to Markdown. Chooses between DOMDocument and
-     * streaming XMLReader based on document length.
+     * the tag-stripping fallback based on document length.
      *
      * @since 1.1.0
      * @access public
@@ -438,13 +438,18 @@ class HtmlToMarkdown
             }
         }
 
-        // Fallback: no explicit sections — treat first row as header
-        if (empty($rawRows)) {
-            foreach ($table->getElementsByTagName('tr') as $i => $tr) {
-                $rawRows[] = ['node' => $tr, 'header' => $i === 0];
-                if ($i === 0) {
-                    $headerRows = 1;
-                }
+        // pick up any <tr> sitting directly on the table with no section wrapper
+        foreach ($table->childNodes as $tr) {
+            if (! ($tr instanceof \DOMElement) || strtolower($tr->tagName) !== 'tr') {
+                continue;
+            }
+
+            // nothing collected yet means this is the header row
+            $is_header = empty($rawRows);
+            $rawRows[] = ['node' => $tr, 'header' => $is_header];
+
+            if ($is_header) {
+                $headerRows = 1;
             }
         }
 
@@ -482,6 +487,9 @@ class HtmlToMarkdown
                 $ci += $colspan;
             }
         }
+
+        // rowspan fills can create later row keys before earlier ones exist
+        ksort($grid);
 
         // Normalise every row to the same column count
         $maxCols = max(array_map('count', $grid));
@@ -770,8 +778,9 @@ class HtmlToMarkdown
     /**
      * convertStreaming
      *
-     * Uses XMLReader for a forward-only text extraction pass on very large
-     * HTML documents. Produces plain-text Markdown with no structural
+     * Text-extraction pass for very large HTML documents. Discarded subtrees
+     * are removed, block boundaries become line breaks, and the remaining
+     * markup is stripped. Produces plain-text Markdown with no structural
      * formatting — headings, lists, and tables are not preserved.
      *
      * @since 1.1.0
@@ -786,41 +795,19 @@ class HtmlToMarkdown
      */
     private static function convertStreaming(string $html): string
     {
-        $reader = new \XMLReader();
+        $html = self::preprocessWordPress($html);
 
-        libxml_use_internal_errors(true);
+        // drop the subtrees we never want any text from
+        $html = preg_replace('#<(script|style|noscript|iframe|object|embed)\b[^>]*>.*?</\1>#is', ' ', $html) ?? $html;
 
-        $reader->XML(
-            '<root>' . self::preprocessWordPress($html) . '</root>',
-            null,
-            LIBXML_NOERROR | LIBXML_NOWARNING
-        );
+        // keep block boundaries so the text does not all run together
+        $html = preg_replace('#</(?:p|div|section|article|h[1-6]|li|tr|blockquote|figcaption)\s*>#i', "\n\n", $html) ?? $html;
+        $html = preg_replace('#<br\s*/?>#i', "\n", $html) ?? $html;
 
-        $out  = '';
-        $skip = 0; // depth counter for discarded subtrees
+        // strip what is left and bring the entities back to plain text
+        $text = html_entity_decode(wp_strip_all_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
-        while ($reader->read()) {
-            if ($reader->nodeType === \XMLReader::ELEMENT) {
-                if (in_array(strtolower($reader->localName), ['script', 'style'], true)) {
-                    $skip++;
-                }
-            }
-
-            if ($reader->nodeType === \XMLReader::END_ELEMENT) {
-                if (in_array(strtolower($reader->localName), ['script', 'style'], true)) {
-                    $skip = max(0, $skip - 1);
-                }
-            }
-
-            // Only collect text outside discarded subtrees
-            if ($reader->nodeType === \XMLReader::TEXT && $skip === 0) {
-                $out .= self::escape($reader->value);
-            }
-        }
-
-        libxml_clear_errors();
-
-        return self::normalize($out);
+        return self::normalize(self::escape($text));
     }
 
     /**
@@ -841,8 +828,8 @@ class HtmlToMarkdown
      */
     private static function escape(string $text): string
     {
-        // Escape the characters that trigger Markdown inline formatting
-        return preg_replace('/([*_`~])/u', '\\\\$1', $text);
+        // Escape the characters that trigger Markdown inline formatting or link syntax
+        return preg_replace('/([\\\\`*_~\[\]<])/u', '\\\\$1', $text);
     }
 
     /**
